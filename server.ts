@@ -120,6 +120,24 @@ app.get("/users", AuthMiddleware, async (req, res) => {
   res.send(allUsers);
 });
 
+app.post("/tweets", async (req, res) => {
+  const requestBody = req.body;
+  if ("text" in requestBody && "userId" in requestBody) {
+    try {
+      await prisma.tweet.create({
+        data: requestBody,
+      });
+      res.status(201).send({ message: "Tweet created!" });
+    } catch (error) {
+      // If we get an error, send back HTTP 500 (Server Error)
+      res.status(500).send({ message: "Something went wrong!" });
+    }
+  } else {
+    // If we are missing fields, send back a HTTP 400
+    res.status(400).send({ message: "'text' and 'userId' are required!" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`⚡ Server listening on port: ${port}`);
 });
