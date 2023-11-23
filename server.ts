@@ -2,7 +2,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { json } from "express";
 import { toData, toToken } from "./auth/jwt";
-import { AuthMiddleware } from "./auth/middleware";
+import { AuthRequest, AuthMiddleware } from "./auth/middleware";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -120,15 +120,27 @@ app.get("/users", AuthMiddleware, async (req, res) => {
   res.send(allUsers);
 });
 
-app.post("/tweets", async (req, res) => {
+app.post("/tweets", AuthMiddleware, async (req: AuthRequest, res) => {
   const requestBody = req.body;
-  if ("text" in requestBody && "userId" in requestBody) {
+
+  console.log(req.userId);
+
+  if (!req.userId) {
+    res.status(500).send("Something went wrong");
+    return;
+  }
+
+  if ("text" in requestBody) {
     try {
       await prisma.tweet.create({
-        data: requestBody,
+        data: {
+          text: requestBody.text,
+          userId: req.userId,
+        },
       });
       res.status(201).send({ message: "Tweet created!" });
     } catch (error) {
+      console.log(error);
       // If we get an error, send back HTTP 500 (Server Error)
       res.status(500).send({ message: "Something went wrong!" });
     }
@@ -136,6 +148,15 @@ app.post("/tweets", async (req, res) => {
     // If we are missing fields, send back a HTTP 400
     res.status(400).send({ message: "'text' and 'userId' are required!" });
   }
+});
+
+app.get("/whoami", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    res.status(500).send("Something went wrong");
+    return;
+  }
+
+  res.send(`You are user with ID ${req.userId}`);
 });
 
 app.listen(port, () => {
