@@ -2,6 +2,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { json } from "express";
 import { toData, toToken } from "./auth/jwt";
+import { AuthMiddleware } from "./auth/middleware";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -32,7 +33,7 @@ app.use(json());
 //   console.log(`⚡ Server listening on port: ${port}`);
 // });
 
-app.post("/register", async (req, res) => {
+app.post("/register", AuthMiddleware, async (req, res) => {
   const requestBody = req.body;
   if ("username" in requestBody && "password" in requestBody) {
     try {
@@ -52,7 +53,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post("/tweet", async (req, res) => {
+app.post("/tweet", AuthMiddleware, async (req, res) => {
   const requestBody = req.body;
   if ("text" in requestBody && "userId" in requestBody) {
     try {
@@ -82,7 +83,7 @@ app.post("/tweet", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", AuthMiddleware, async (req, res) => {
   const requestBody = req.body;
   if ("username" in requestBody && "password" in requestBody) {
     try {
@@ -107,25 +108,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
-  const headers = req.headers;
-  if (
-    headers["authorization"] && // Is the header there
-    headers["authorization"].split(" ")[0] === "Bearer" && // Is the first word (before the space) equal to "Bearer"
-    headers["authorization"].split(" ")[1] // Is there a part after the space
-  ) {
-    const token = headers["authorization"].split(" ")[1];
-    try {
-      const data = toData(token);
-    } catch (e) {
-      res.status(401).send({ message: "Token missing or invalid" });
-      return;
-    }
-  } else {
-    res.status(401).send({ message: "Token missing or invalid!!!!" });
-    return;
-  }
-
+app.get("/users", AuthMiddleware, async (req, res) => {
   const allUsers = await prisma.user.findMany({
     select: {
       id: true,
@@ -133,7 +116,7 @@ app.get("/users", async (req, res) => {
       age: true,
     },
   });
-  
+
   res.send(allUsers);
 });
 
