@@ -81,6 +81,30 @@ app.post("/tweet", async (req, res) => {
   }
 });
 
+app.post("/login", async (req, res) => {
+  const requestBody = req.body;
+  if ("username" in requestBody && "password" in requestBody) {
+    try {
+      const userToLogin = await prisma.user.findUnique({
+        where: {
+          username: requestBody.username,
+        },
+      });
+      if (userToLogin && userToLogin.password === requestBody.password) {
+        res.status(200).send({ message: "User logged in!" });
+        return;
+      }
+      res.status(400).send({ message: "Login failed" });
+    } catch (e) {
+      res.status(500).send({ message: "Something went wrong" });
+    }
+  } else {
+    res
+      .status(400)
+      .send({ message: "'username' and 'password' are required!" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`⚡ Server listening on port: ${port}`);
 });
