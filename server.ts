@@ -107,6 +107,17 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.get("/users", async (req, res) => {
+  const allUsers = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      age: true,
+    },
+  });
+  res.send(allUsers);
+});
+
 app.listen(port, () => {
   console.log(`⚡ Server listening on port: ${port}`);
 });
