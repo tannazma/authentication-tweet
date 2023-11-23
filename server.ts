@@ -1,6 +1,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { json } from "express";
+import { toToken } from "./auth/jwt";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -91,7 +92,8 @@ app.post("/login", async (req, res) => {
         },
       });
       if (userToLogin && userToLogin.password === requestBody.password) {
-        res.status(200).send({ message: "User logged in!" });
+        const token = toToken({ userId: userToLogin.id });
+        res.status(200).send({ message: "User logged in!", token: token });
         return;
       }
       res.status(400).send({ message: "Login failed" });
